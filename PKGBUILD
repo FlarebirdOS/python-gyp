@@ -1,6 +1,5 @@
 pkgname=python-gyp
 pkgver=20240207.1615ec32
-_commit=1615ec326858f8c2bd8f30b3a86ea71830409ce4
 pkgrel=1
 pkgdesc="Generate Your Projects meta-build system"
 arch=('x86_64')
@@ -11,30 +10,40 @@ depends=(
     'python'
 )
 makedepends=(
+    'git'
     'python-build'
     'python-installer'
     'python-setuptools'
     'python-wheel'
 )
-source=(https://github.com/chromium/gyp/archive/${pkgname#*-}-${_commit}.tar.gz
+source=(git+ssh://git@github.com/chromium/gyp#commit=1615ec326858f8c2bd8f30b3a86ea71830409ce4
     0001-Fix-Python-compat-and-remove-six.patch)
-sha256sums=(b0a624cebe7e7d0f532532e73d132fabbd9246dc7a52e8e62cfe214a2e32da26
+sha256sums=(a23ca8b1bf78e1e0fa067d1766241538fd12bd1e6357208ab9eb8ebeed0f0f9e
     2717de3a91cffd5c64cf0cb92bcd587e4d1db7a664ca53bb48efd47b1e57eba7)
 
-prepare() {
-    cd ${pkgname#*-}-${_commit}
+pkgver() {
+    cd ${pkgname#*-}
 
-    patch -Np1 -i ${srcdir}/0001-Fix-Python-compat-and-remove-six.patch
+    local commit_date="$(TZ=UTC git show -s --pretty=%cd --date=format-local:%Y%m%d HEAD)"
+    local short_rev="$(git rev-parse --short HEAD)"
+
+    echo $commit_date.$short_rev
+}
+
+prepare() {
+    cd ${pkgname#*-}
+
+    git apply -3 ${srcdir}/0001-Fix-Python-compat-and-remove-six.patch
 }
 
 build() {
-    cd ${pkgname#*-}-${_commit}
+    cd ${pkgname#*-}
 
-    python3 -m build --wheel --skip-dependency-check --no-isolation
+    python3 -m build --wheel --no-isolation
 }
 
 package() {
-    cd ${pkgname#*-}-${_commit}
+    cd ${pkgname#*-}
 
     python3 -m installer -d ${pkgdir} dist/*.whl
 }
